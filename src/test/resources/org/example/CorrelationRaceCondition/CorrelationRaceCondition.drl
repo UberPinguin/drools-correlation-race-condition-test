@@ -1,0 +1,57 @@
+package org.example;
+
+import java.util.concurrent.ConcurrentSkipListSet
+import java.util.Date;
+
+declare Event
+  @role(event)
+  @timestamp(time)
+end
+
+declare DeviceOfflineAffliction
+  location : String
+  offlineDevices : ConcurrentSkipListSet
+end
+
+rule "New Device Offline Event Without Existing DeviceOffline Affliction" when
+  $e : Event(eventIdentifier == "DeviceOffline", location != "", deviceName != "", $location : location, $device : 
+  deviceName)
+  not DeviceOfflineAffliction(location == $location)
+then
+  delete($e);
+  ConcurrentSkipListSet<String> offlineDevices = new ConcurrentSkipListSet<>();
+  offlineDevices.add($device);
+  DeviceOfflineAffliction aff = new DeviceOfflineAffliction($location, offlineDevices);
+  insert(aff);
+end
+  
+rule "New Device Offline Event With Existing DeviceOffline Affliction" when
+  $e : Event(eventIdentifier == "DeviceOffline", location != "", deviceName != "", $location : location, $device : 
+  deviceName)
+  $aff : DeviceOfflineAffliction(location == $location)
+then
+  delete($e);
+  modify($aff) { getOfflineDevices().add($device) }
+end
+
+rule "New Device Adopted Event Without Existing DeviceOffline Affliction" when
+  $e : Event(eventIdentifier == "DeviceAdopted", location != "", deviceName != "", $location : location, $device :  
+  deviceName)
+  not DeviceOfflineAffliction(location == $location)
+then
+  delete($e);
+end
+
+rule "New Device Adopted Event With Existing DeviceOffline Affliction" when
+  $e : Event(eventIdentifier == "DeviceAdopted", location != "", deviceName != "", $location : location, $device : deviceName)
+  $aff : DeviceOfflineAffliction(location == $location)
+then
+  delete($e);
+  modify($aff) { getOfflineDevices().remove($device) }
+end
+
+rule "All Devices at Location Recovered" when
+  $aff : DeviceOfflineAffliction(offlineDevices.size() == 0)
+then
+  delete($aff);
+end
