@@ -11,47 +11,64 @@ end
 declare DeviceOfflineAffliction
   location : String
   offlineDevices : ConcurrentSkipListSet
+  count : Integer
+  searchKey : String
 end
 
-rule "New Device Offline Event Without Existing DeviceOffline Affliction" when
-  $e : Event(eventIdentifier == "DeviceOffline", location != "", deviceName != "", $location : location, $device : 
-  deviceName)
-  not DeviceOfflineAffliction(location == $location)
-then
-  delete($e);
-  ConcurrentSkipListSet<String> offlineDevices = new ConcurrentSkipListSet<>();
-  offlineDevices.add($device);
-  DeviceOfflineAffliction aff = new DeviceOfflineAffliction($location, offlineDevices);
-  insert(aff);
-end
-  
-rule "New Device Offline Event With Existing DeviceOffline Affliction" when
-  $e : Event(eventIdentifier == "DeviceOffline", location != "", deviceName != "", $location : location, $device : 
-  deviceName)
-  $aff : DeviceOfflineAffliction(location == $location)
-then
-  delete($e);
-  modify($aff) { getOfflineDevices().add($device) }
-end
+rule "snmp_enrich:trapDeviceAdopted: Update matching affliction by location"
+  salience 30
+  no-loop true
+  when
+    $e : Event(eventIdentifier == "DeviceAdopted", location != "", deviceName != "", $location : location,
+        $device : deviceName)
+    $aff : DeviceOfflineAffliction(location == $location, $searchKey : searchKey)
+  then
+    delete($e);
+    modify($aff) {
+      getOfflineDevices().remove($device),
+      setCount($aff.getOfflineDevices().size())  
+    }
+  end
 
-rule "New Device Adopted Event Without Existing DeviceOffline Affliction" when
-  $e : Event(eventIdentifier == "DeviceAdopted", location != "", deviceName != "", $location : location, $device :  
-  deviceName)
-  not DeviceOfflineAffliction(location == $location)
-then
-  delete($e);
-end
+rule "snmp_correlate:trapDeviceAdopted: All Devices Adopted For Location"
+  salience 20
+  no-loop true
+  when
+    $aff : DeviceOfflineAffliction(offlineDevices.size() == 0, $searchKey : searchKey)
+  then
+    delete($aff);
+  end
 
-rule "New Device Adopted Event With Existing DeviceOffline Affliction" when
-  $e : Event(eventIdentifier == "DeviceAdopted", location != "", deviceName != "", $location : location, $device : deviceName)
-  $aff : DeviceOfflineAffliction(location == $location)
-then
-  delete($e);
-  modify($aff) { getOfflineDevices().remove($device) }
-end
+rule "snmp_enrich:trapDeviceOffline: Correlate to existing affliction"
+  salience 10
+  no-loop true
+  when
+    $e : Event(eventIdentifier == "DeviceOffline", location != "", deviceName != "", $location : location,
+        $device : deviceName)
+    $aff : DeviceOfflineAffliction(location == $location, $count : count)
+  then
+    delete($e);
+    modify($aff) {
+      getOfflineDevices().add($device),
+      setCount($aff.getOfflineDevices().size())
+    };
+  end
 
-rule "All Devices at Location Recovered" when
-  $aff : DeviceOfflineAffliction(offlineDevices.size() == 0)
-then
-  delete($aff);
-end
+rule "snmp_enrich:trapDeviceOffline: Create new affliction"
+  salience 0
+  no-loop true
+  when
+    $e : Event(eventIdentifier == "DeviceOffline", location != "", deviceName != "", $ei : eventIdentifier,
+        $location : location, $device : deviceName)
+    not $aff : DeviceOfflineAffliction(location == $location)
+  then
+    delete($e);
+    ConcurrentSkipListSet<String> offlineDevices = new ConcurrentSkipListSet<>();
+    offlineDevices.add($device);
+    DeviceOfflineAffliction aff = new DeviceOfflineAffliction();
+    aff.setLocation($location);
+    aff.setCount(1);
+    aff.setOfflineDevices(offlineDevices);
+    aff.setSearchKey($ei + ":" + $location + "%");
+    insert(aff);
+  end

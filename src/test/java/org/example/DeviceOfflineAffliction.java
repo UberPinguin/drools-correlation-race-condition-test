@@ -3,10 +3,24 @@ package org.example;
 import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.drools.core.common.DefaultFactHandle;
 
-public class DeviceOfflineAffliction {
+public class DeviceOfflineAffliction extends DefaultFactHandle {
+
   String location;
   ConcurrentSkipListSet offlineDevices;
+  Integer count;
+  String searchKey;
+
+  public DeviceOfflineAffliction(String location, ConcurrentSkipListSet offlineDevices, Integer count, String searchKey)
+  {
+    this.location = location;
+    this.offlineDevices = offlineDevices;
+    this.count = count;
+    this.searchKey = searchKey;
+  }
+
+  public DeviceOfflineAffliction() {}
 
   public String getLocation() {
     return location;
@@ -21,16 +35,27 @@ public class DeviceOfflineAffliction {
     return offlineDevices;
   }
 
-  public DeviceOfflineAffliction() {}
+  public Integer getCount() {
+    return count;
+  }
+
+  public DeviceOfflineAffliction setCount(Integer count) {
+    this.count = count;
+    return this;
+  }
+
+  public String getSearchKey() {
+    return searchKey;
+  }
+
+  public DeviceOfflineAffliction setSearchKey(String searchKey) {
+    this.searchKey = searchKey;
+    return this;
+  }
 
   public DeviceOfflineAffliction setOfflineDevices(ConcurrentSkipListSet offlineDevices) {
     this.offlineDevices = offlineDevices;
     return this;
-  }
-
-  public DeviceOfflineAffliction(String location, ConcurrentSkipListSet offlineDevices) {
-    this.location = location;
-    this.offlineDevices = offlineDevices;
   }
 
   @Override
