@@ -107,7 +107,7 @@ public class CorrelationRaceConditionTest extends TestCase {
   * device name in it, and that name should be "device08".
   * @throws InterruptedException
   */
-  public void testMultipleOfflineAndAdoptedEvents() throws InterruptedException {
+  public void testMultipleOfflineAndAdoptedEventsNoSleepBetweenEvents() throws InterruptedException {
     final Event templateOfflineEvent = new Event(new Date(), "DeviceOffline", "loc001", "device01");
     final Event templateAdoptedEvent = new Event(new Date(), "DeviceAdopted", "loc001", "device01");
 
@@ -144,6 +144,45 @@ public class CorrelationRaceConditionTest extends TestCase {
     assertEquals("Incorrect remaining offline device", "device08", offlineDevices.get(0));
   }
 
+  public void testMultipleOfflineAndAdoptedEventsWithSleepBetweenEvents() throws InterruptedException {
+    final Event templateOfflineEvent = new Event(new Date(), "DeviceOffline", "loc001", "device01");
+    final Event templateAdoptedEvent = new Event(new Date(), "DeviceAdopted", "loc001", "device01");
+
+    // insert a set of offline events
+    for (int i = 1; i < 15; i++) {
+      if (i == 14) {
+        continue;
+      }
+      Thread.sleep(35);
+      Event offlineEvent = templateOfflineEvent.clone().setTime(new Date())
+          .setDeviceName(templateOfflineEvent.getDeviceName().replace("1",String.valueOf(i)));
+      kieSession.insert(offlineEvent);
+    }
+    // insert a set of adopted events
+    for (int i = 1; i < 15; i++) {
+      if (i == 8) {
+        continue;
+      }
+      Thread.sleep(35);
+      Event adoptedEvent = templateAdoptedEvent.clone().setTime(new Date())
+          .setDeviceName(templateAdoptedEvent.getDeviceName().replace("1",String.valueOf(i)));
+      kieSession.insert(adoptedEvent);
+    }
+    /*
+     * If we don't sleep for at least 150ms here, the Drools rules will not have finished firing
+     * when we attempt to verify the expected end state.
+     */
+    Thread.sleep(150);
+    listRulesInSession();
+    listFactHandleClasses();
+    DeviceOfflineAffliction aff = getDeviceOfflineAffliction();
+    assertEquals("The number of offline devices is wrong \n" + aff.getOfflineDevices(), 1,
+        aff.getOfflineDevices().size());
+    List<String> offlineDevices = new ArrayList<>(aff.getOfflineDevices());
+    assertEquals("Incorrect number of remaining offline devices", 1, offlineDevices.size());
+    assertEquals("Incorrect remaining offline device", "device08", offlineDevices.get(0));
+  }
+  
   private void listRulesInSession() {
     Collection<KiePackage> packages = kieSession.getKieBase().getKiePackages();
     System.err.println("printing inventory of rules");
