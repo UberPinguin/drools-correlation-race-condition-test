@@ -54,7 +54,7 @@ rule "DeviceOffline: Correlate to existing affliction"
     };
   end
 
-rule "snmp_enrich:trapDeviceOffline: Create new affliction"
+rule "DeviceOffline: Create new affliction"
   salience 0
   no-loop true
   when
