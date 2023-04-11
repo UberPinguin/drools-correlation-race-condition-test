@@ -2,7 +2,7 @@
 <kmodule xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xmlns="http://www.drools.org/xsd/kmodule">
 
-    <kbase eventProcessingMode="cloud" packages="org.example.CorrelationRaceCondition">
+    <kbase eventProcessingMode="stream" packages="org.example.CorrelationRaceCondition">
         <ksession name="CorrelationRaceConditionKS"/>
     </kbase>
 </kmodule>
