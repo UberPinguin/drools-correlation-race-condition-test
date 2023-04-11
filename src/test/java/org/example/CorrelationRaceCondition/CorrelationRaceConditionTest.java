@@ -1,4 +1,4 @@
-package org.example;
+package org.example.CorrelationRaceCondition;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,11 +10,11 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.common.InternalFactHandle;
-import org.drools.core.event.DebugAgendaEventListener;
 import org.junit.After;
 import org.junit.Before;
 import org.kie.api.KieServices;
 import org.kie.api.definition.KiePackage;
+import org.kie.api.event.rule.DebugAgendaEventListener;
 import org.kie.api.event.rule.DebugRuleRuntimeEventListener;
 import org.kie.api.logger.KieRuntimeLogger;
 import org.kie.api.runtime.KieContainer;
@@ -32,7 +32,7 @@ public class CorrelationRaceConditionTest extends TestCase {
 
   @Before
   public void setUp() {
-    ks = KieServices.Factory.get();
+    ks = KieServices.get();
     kc = ks.getKieClasspathContainer();
     kieSession = kc.newKieSession("CorrelationRaceConditionKS");
     kieSession.addEventListener(new DebugAgendaEventListener());

@@ -1,4 +1,4 @@
-package org.example;
+package org.example.CorrelationRaceCondition;
 
 import java.util.concurrent.ConcurrentSkipListSet
 import java.util.Date;
@@ -15,7 +15,7 @@ declare DeviceOfflineAffliction
   searchKey : String
 end
 
-rule "snmp_enrich:trapDeviceAdopted: Update matching affliction by location"
+rule "DeviceAdopted: Update matching affliction by location"
   salience 30
   no-loop true
   when
@@ -30,7 +30,7 @@ rule "snmp_enrich:trapDeviceAdopted: Update matching affliction by location"
     }
   end
 
-rule "snmp_correlate:trapDeviceAdopted: All Devices Adopted For Location"
+rule "DeviceAdopted: All Devices Adopted For Location"
   salience 20
   no-loop true
   when
@@ -39,7 +39,7 @@ rule "snmp_correlate:trapDeviceAdopted: All Devices Adopted For Location"
     delete($aff);
   end
 
-rule "snmp_enrich:trapDeviceOffline: Correlate to existing affliction"
+rule "DeviceOffline: Correlate to existing affliction"
   salience 10
   no-loop true
   when

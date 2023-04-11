@@ -1,4 +1,4 @@
-package org.example;
+package org.example.CorrelationRaceCondition;
 
 import java.util.Date;
 public class Event {

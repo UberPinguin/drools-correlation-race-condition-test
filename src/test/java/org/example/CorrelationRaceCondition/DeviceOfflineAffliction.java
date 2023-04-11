@@ -1,4 +1,4 @@
-package org.example;
+package org.example.CorrelationRaceCondition;
 
 import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.commons.lang3.builder.EqualsBuilder;
