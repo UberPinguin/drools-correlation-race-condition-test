@@ -1,18 +1,12 @@
 package org.example.CorrelationRaceCondition;
 
-import java.util.concurrent.ConcurrentSkipListSet
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Date;
 
 declare Event
   @role(event)
   @timestamp(time)
-end
-
-declare DeviceOfflineAffliction
-  location : String
-  offlineDevices : ConcurrentSkipListSet
-  count : Integer
-  searchKey : String
 end
 
 rule "DeviceAdopted: Update matching affliction by location"
@@ -21,6 +15,7 @@ rule "DeviceAdopted: Update matching affliction by location"
   when
     $e : Event(eventIdentifier == "DeviceAdopted", location != "", deviceName != "", $location : location,
         $device : deviceName)
+    not Event(this != $e, this before $e)
     $aff : DeviceOfflineAffliction(location == $location, $searchKey : searchKey)
   then
     delete($e);
@@ -63,7 +58,7 @@ rule "DeviceOffline: Create new affliction"
     not $aff : DeviceOfflineAffliction(location == $location)
   then
     delete($e);
-    ConcurrentSkipListSet<String> offlineDevices = new ConcurrentSkipListSet<>();
+    Set<String> offlineDevices = new HashSet<>();
     offlineDevices.add($device);
     DeviceOfflineAffliction aff = new DeviceOfflineAffliction();
     aff.setLocation($location);
