@@ -10,48 +10,37 @@ end
 
 declare DeviceOfflineAffliction
   location : String
-  offlineDevices : ConcurrentSkipListSet
-  count : Integer
-  searchKey : String
 end
 
 rule "DeviceAdopted: Update matching affliction by location"
   salience 30
   no-loop true
   when
+    $e : Event(eventIdentifier == "DeviceAdopted", location != "", deviceName != "", $location : location, $device : deviceName)
+    $a : Event(eventIdentifier == "DeviceOffline", location == $location, deviceName == $device, this before $e)
+  then
+    delete($a);
+  end
+
+rule "DeviceAdopted: Affliction Retracted"
+  salience 30
+  no-loop true
+  when
+    $e : Event(eventIdentifier == "DeviceAdopted", location != "", deviceName != "", $location : location)
+    not(DeviceOfflineAffliction(location == $location))
+  then
+    delete($e);
+  end
+
+rule "DeviceAdopted: No Matching DeviceOffline Events"
+  salience 30
+  no-loop true
+  when
     $e : Event(eventIdentifier == "DeviceAdopted", location != "", deviceName != "", $location : location,
         $device : deviceName)
-    $aff : DeviceOfflineAffliction(location == $location, $searchKey : searchKey)
+    not Event(eventIdentifier == "DeviceOffline", location == $location, deviceName == $device, this before $e)
   then
     delete($e);
-    modify($aff) {
-      getOfflineDevices().remove($device),
-      setCount($aff.getOfflineDevices().size())  
-    }
-  end
-
-rule "DeviceAdopted: All Devices Adopted For Location"
-  salience 20
-  no-loop true
-  when
-    $aff : DeviceOfflineAffliction(offlineDevices.size() == 0, $searchKey : searchKey)
-  then
-    delete($aff);
-  end
-
-rule "DeviceOffline: Correlate to existing affliction"
-  salience 10
-  no-loop true
-  when
-    $e : Event(eventIdentifier == "DeviceOffline", location != "", deviceName != "", $location : location,
-        $device : deviceName)
-    $aff : DeviceOfflineAffliction(location == $location, $count : count)
-  then
-    delete($e);
-    modify($aff) {
-      getOfflineDevices().add($device),
-      setCount($aff.getOfflineDevices().size())
-    };
   end
 
 rule "DeviceOffline: Create new affliction"
@@ -60,15 +49,6 @@ rule "DeviceOffline: Create new affliction"
   when
     $e : Event(eventIdentifier == "DeviceOffline", location != "", deviceName != "", $ei : eventIdentifier,
         $location : location, $device : deviceName)
-    not $aff : DeviceOfflineAffliction(location == $location)
   then
-    delete($e);
-    ConcurrentSkipListSet<String> offlineDevices = new ConcurrentSkipListSet<>();
-    offlineDevices.add($device);
-    DeviceOfflineAffliction aff = new DeviceOfflineAffliction();
-    aff.setLocation($location);
-    aff.setCount(1);
-    aff.setOfflineDevices(offlineDevices);
-    aff.setSearchKey($ei + ":" + $location + "%");
-    insert(aff);
+    insertLogical(new DeviceOfflineAffliction($location));
   end

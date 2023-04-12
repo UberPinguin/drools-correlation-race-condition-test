@@ -1,7 +1,11 @@
 package org.example.CorrelationRaceCondition;
 
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+import org.drools.core.common.DefaultFactHandle;
 import java.util.Date;
-public class Event {
+
+public class Event extends DefaultFactHandle {
   Date time;
   String eventIdentifier;
   String location;
@@ -73,27 +77,22 @@ public class Event {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
+    if (this == o)
+      return true;
 
-    if (!(o instanceof Event)) return false;
+    if (!(o instanceof Event))
+      return false;
 
     Event event = (Event) o;
 
-    return new org.apache.commons.lang3.builder.EqualsBuilder()
-        .append(getTime(), event.getTime())
-        .append(getEventIdentifier(), event.getEventIdentifier())
-        .append(getLocation(), event.getLocation())
-        .append(getDeviceName(), event.getDeviceName())
-        .isEquals();
+    return new EqualsBuilder().appendSuper(super.equals(o)).append(getTime(), event.getTime())
+        .append(getEventIdentifier(), event.getEventIdentifier()).append(getLocation(), event.getLocation())
+        .append(getDeviceName(), event.getDeviceName()).isEquals();
   }
 
   @Override
   public int hashCode() {
-    return new org.apache.commons.lang3.builder.HashCodeBuilder(17, 37)
-        .append(getTime())
-        .append(getEventIdentifier())
-        .append(getLocation())
-        .append(getDeviceName())
-        .toHashCode();
+    return new HashCodeBuilder(17, 37).appendSuper(super.hashCode()).append(getTime()).append(getEventIdentifier())
+        .append(getLocation()).append(getDeviceName()).toHashCode();
   }
 }

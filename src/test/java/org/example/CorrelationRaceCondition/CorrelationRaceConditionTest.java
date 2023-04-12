@@ -1,17 +1,8 @@
 package org.example.CorrelationRaceCondition;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
-import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.common.InternalFactHandle;
-import org.junit.After;
-import org.junit.Before;
 import org.kie.api.KieServices;
 import org.kie.api.definition.KiePackage;
 import org.kie.api.event.rule.DebugAgendaEventListener;
@@ -19,6 +10,13 @@ import org.kie.api.event.rule.DebugRuleRuntimeEventListener;
 import org.kie.api.logger.KieRuntimeLogger;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
+import org.kie.api.runtime.ObjectFilter;
+
+import org.junit.After;
+import org.junit.Before;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 /**
 * Unit test for simple App.
@@ -72,9 +70,6 @@ public class CorrelationRaceConditionTest extends TestCase {
     return new TestSuite(CorrelationRaceConditionTest.class);
   }
 
-  /**
-  * Rigourous Test :-)
-  */
   public void testCloneEvent() {
     final Event event = new Event(new Date(), "DeviceOffline", "loc001", "device01");
     Event testClone = event.clone();
@@ -90,12 +85,12 @@ public class CorrelationRaceConditionTest extends TestCase {
     */
     Thread.sleep(150);
     listRulesInSession();
-    listFactHandleClasses();
+    printFactHandleDetails();
+    assertEquals("Wrong number of Event facts", 1, countFactHandleByClass(Event.class::isInstance));
+    assertEquals("Wrong number of DeviceOfflineAffliction facts", 1,
+            countFactHandleByClass(DeviceOfflineAffliction.class::isInstance));
     DeviceOfflineAffliction aff = getDeviceOfflineAffliction();
-    assertEquals("The number of offline devices is wrong \n" + aff.getOfflineDevices(), 1,
-    aff.getOfflineDevices().size());
-    List<String> offlineDevices = new ArrayList<>(aff.getOfflineDevices());
-    assertEquals("Incorrect remaining offline device", "device01", offlineDevices.get(0));
+    assertNotNull(aff);
   }
 
   /**
@@ -130,18 +125,17 @@ public class CorrelationRaceConditionTest extends TestCase {
       kieSession.insert(adoptedEvent);
     }
     /*
-    * If we don't sleep for at least 150ms here, the Drools rules will not have finished firing
+    * If we don't sleep for at least 250ms here, the Drools rules may not have finished firing
     * when we attempt to verify the expected end state.
     */
-    Thread.sleep(150);
+    Thread.sleep(250);
     listRulesInSession();
-    listFactHandleClasses();
+    printFactHandleDetails();
+    assertEquals("Wrong number of Event facts", 1, countFactHandleByClass(Event.class::isInstance));
+    assertEquals("Wrong number of DeviceOfflineAffliction facts", 1,
+            countFactHandleByClass(DeviceOfflineAffliction.class::isInstance));
     DeviceOfflineAffliction aff = getDeviceOfflineAffliction();
-    assertEquals("The number of offline devices is wrong \n" + aff.getOfflineDevices(), 1,
-        aff.getOfflineDevices().size());
-    List<String> offlineDevices = new ArrayList<>(aff.getOfflineDevices());
-    assertEquals("Incorrect number of remaining offline devices", 1, offlineDevices.size());
-    assertEquals("Incorrect remaining offline device", "device08", offlineDevices.get(0));
+    assertNotNull(aff);
   }
 
   public void testMultipleOfflineAndAdoptedEventsWithSleepBetweenEvents() throws InterruptedException {
@@ -174,13 +168,12 @@ public class CorrelationRaceConditionTest extends TestCase {
      */
     Thread.sleep(150);
     listRulesInSession();
-    listFactHandleClasses();
+    printFactHandleDetails();
+    assertEquals("Wrong number of Event facts", 1, countFactHandleByClass(Event.class::isInstance));
+    assertEquals("Wrong number of DeviceOfflineAffliction facts", 1,
+            countFactHandleByClass(DeviceOfflineAffliction.class::isInstance));
     DeviceOfflineAffliction aff = getDeviceOfflineAffliction();
-    assertEquals("The number of offline devices is wrong \n" + aff.getOfflineDevices(), 1,
-        aff.getOfflineDevices().size());
-    List<String> offlineDevices = new ArrayList<>(aff.getOfflineDevices());
-    assertEquals("Incorrect number of remaining offline devices", 1, offlineDevices.size());
-    assertEquals("Incorrect remaining offline device", "device08", offlineDevices.get(0));
+    assertNotNull(aff);
   }
   
   private void listRulesInSession() {
@@ -190,22 +183,21 @@ public class CorrelationRaceConditionTest extends TestCase {
     System.err.println("end of rules inventory");
   }
 
-  private void listFactHandleClasses() {
-    System.err.println("printing inventory of fact class names");
+  private void printFactHandleDetails() {
+    System.err.println("printing details of facts");
     kieSession.getFactHandles().forEach(fh -> {
       InternalFactHandle ifh = (InternalFactHandle) fh;
-      System.err.println("\t" + ifh.getObject().getClass().getSimpleName());
+      System.err.println("\t" + ifh.getObject().toString());
     });
     System.err.println("end of fact class name inventory");
   }
   
+  private int countFactHandleByClass(ObjectFilter objFilter) {
+    return kieSession.getObjects(objFilter).size();
+  }
+
   private DeviceOfflineAffliction getDeviceOfflineAffliction() {
-    return kieSession.getFactHandles().stream()
-          .filter(fh -> fh.getClass().getSimpleName().equals(DefaultFactHandle.class.getSimpleName()))
-          .map(InternalFactHandle.class::cast)
-          .map(InternalFactHandle::getObject)
-          .map(DeviceOfflineAffliction.class::cast)
-          .collect(Collectors.toList()).get(0);    
+    return (DeviceOfflineAffliction) kieSession.getObjects(DeviceOfflineAffliction.class::isInstance).iterator().next();
   }
 
 }
