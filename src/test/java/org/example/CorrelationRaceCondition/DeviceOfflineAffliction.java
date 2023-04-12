@@ -1,7 +1,6 @@
 package org.example.CorrelationRaceCondition;
 
-import java.util.Set;
-
+import java.util.concurrent.ConcurrentSkipListSet;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.drools.core.common.DefaultFactHandle;
@@ -9,11 +8,11 @@ import org.drools.core.common.DefaultFactHandle;
 public class DeviceOfflineAffliction extends DefaultFactHandle {
 
   String location;
-  Set offlineDevices;
+  ConcurrentSkipListSet offlineDevices;
   Integer count;
   String searchKey;
 
-  public DeviceOfflineAffliction(String location, Set offlineDevices, Integer count, String searchKey)
+  public DeviceOfflineAffliction(String location, ConcurrentSkipListSet offlineDevices, Integer count, String searchKey)
   {
     this.location = location;
     this.offlineDevices = offlineDevices;
@@ -32,7 +31,7 @@ public class DeviceOfflineAffliction extends DefaultFactHandle {
     return this;
   }
 
-  public Set getOfflineDevices() {
+  public ConcurrentSkipListSet getOfflineDevices() {
     return offlineDevices;
   }
 
@@ -54,7 +53,7 @@ public class DeviceOfflineAffliction extends DefaultFactHandle {
     return this;
   }
 
-  public DeviceOfflineAffliction setOfflineDevices(Set offlineDevices) {
+  public DeviceOfflineAffliction setOfflineDevices(ConcurrentSkipListSet offlineDevices) {
     this.offlineDevices = offlineDevices;
     return this;
   }

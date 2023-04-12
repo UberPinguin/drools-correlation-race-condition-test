@@ -4,7 +4,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-
+import java.util.stream.Collectors;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+import org.drools.core.common.DefaultFactHandle;
 import org.drools.core.common.InternalFactHandle;
 import org.junit.After;
 import org.junit.Before;
@@ -15,10 +19,6 @@ import org.kie.api.event.rule.DebugRuleRuntimeEventListener;
 import org.kie.api.logger.KieRuntimeLogger;
 import org.kie.api.runtime.KieContainer;
 import org.kie.api.runtime.KieSession;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
 * Unit test for simple App.
@@ -200,7 +200,12 @@ public class CorrelationRaceConditionTest extends TestCase {
   }
   
   private DeviceOfflineAffliction getDeviceOfflineAffliction() {
-    return (DeviceOfflineAffliction) kieSession.getObjects(DeviceOfflineAffliction.class::isInstance).iterator().next();    
+    return kieSession.getFactHandles().stream()
+          .filter(fh -> fh.getClass().getSimpleName().equals(DefaultFactHandle.class.getSimpleName()))
+          .map(InternalFactHandle.class::cast)
+          .map(InternalFactHandle::getObject)
+          .map(DeviceOfflineAffliction.class::cast)
+          .collect(Collectors.toList()).get(0);    
   }
 
 }
